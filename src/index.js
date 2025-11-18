@@ -4,24 +4,24 @@ console.log('index.js loaded');
 // ========= IMAGE SOURCES (must exist in /public folder) =========
 
 const INTRO_IMAGES = [
-  '/SZN_logo.png',
-  '/bryanbabyphoto.png',
-  '/bryankidphoto.png'
+  require("../public/SZN_logo.png"),
+  require("../public/bryanbabyphoto.png"),
+  require("../public/bryankidphoto.png")
 ];
 
 const ACHIEVEMENTS_IMAGES = [
-  '/achievements1.png',
-  '/achievements2.png',
-  '/achievements3.png'
+  require("../public/achievements1.png"),
+  require("../public/achievements2.png"),
+  require("../public/achievements3.png")
 ];
 
 const HOBBY_IMAGES = [
-  '/hobby1.png',
-  '/hobby2.png',
-  '/hobby3.png'
+  require("../public/hobby1.png"),
+  require("../public/hobby2.png"),
+  require("../public/hobby3.png")
 ];
 
-const EXTRA_SPINNER_IMAGE = '/achievements4.png';
+const EXTRA_SPINNER_IMAGE = require("../public/achievements4.png");
 
 // Maximum of 10 spinner images
 const SPINNER_IMAGES = [
