@@ -1,250 +1,363 @@
 // ========= DEBUG =========
 console.log('index.js loaded');
 
-// ========= IMAGE SOURCES (must exist in /public folder) =========
+// ========= IMAGE SOURCES (webpack will process these) =========
 
+// Intro images
 const INTRO_IMAGES = [
-  require("../public/SZN_logo.png"),
-  require("../public/bryanbabyphoto.png"),
-  require("../public/bryankidphoto.png")
+  require('../public/SZN_logo.png'),
+  require('../public/bryanbabyphoto.png'),
+  require('../public/bryankidphoto.png')
 ];
 
+// Achievements images
 const ACHIEVEMENTS_IMAGES = [
-  require("../public/achievements1.png"),
-  require("../public/achievements2.png"),
-  require("../public/achievements3.png")
+  require('../public/achievements1.png'),
+  require('../public/achievements2.png'),
+  require('../public/achievements3.png')
 ];
 
+// Hobby images
 const HOBBY_IMAGES = [
-  require("../public/hobby1.png"),
-  require("../public/hobby2.png"),
-  require("../public/hobby3.png")
+  require('../public/hobby1.png'),
+  require('../public/hobby2.png'),
+  require('../public/hobby3.png')
 ];
 
-const EXTRA_SPINNER_IMAGE = require("../public/achievements4.png");
+// Extra image for spinner
+const EXTRA_SPINNER_IMAGE = require('../public/achievements4.png');
 
-// Maximum of 10 spinner images
+// Spinner uses all of the above
 const SPINNER_IMAGES = [
   ...INTRO_IMAGES,
   ...ACHIEVEMENTS_IMAGES,
   ...HOBBY_IMAGES,
   EXTRA_SPINNER_IMAGE
-].filter(Boolean).slice(0, 10);
-
+].slice(0, 10);
 
 // ========= SMALL GENERIC CAROUSEL HELPER =========
 
 function initCarousel(imgElement, navElement, imagesArray, fallbackUrl) {
   if (!imgElement || !navElement) return;
 
-  if (!imagesArray.length) {
+  if (!imagesArray || !imagesArray.length) {
     imgElement.src = fallbackUrl;
     return;
   }
 
   let currentIndex = 0;
+  let isChanging = false;
 
   function showImage(index) {
+    if (isChanging) return;
+    isChanging = true;
     currentIndex = index;
 
     const src = imagesArray[index];
     const temp = new Image();
 
-    temp.onload = () => (imgElement.src = temp.src);
+    // start fade-out
+    imgElement.classList.add('img-transition-out');
+
+    temp.onload = () => {
+      setTimeout(() => {
+        imgElement.src = temp.src;
+
+        void imgElement.offsetHeight; // force reflow
+
+        imgElement.classList.remove('img-transition-out');
+
+        setTimeout(() => {
+          isChanging = false;
+        }, 350);
+      }, 120);
+    };
+
     temp.onerror = () => {
-      console.warn("Failed image:", src);
+      console.warn('Image failed to load:', src);
       imgElement.src = fallbackUrl;
+      imgElement.classList.remove('img-transition-out');
+      isChanging = false;
     };
 
     temp.src = src;
 
-    navElement.querySelectorAll("button").forEach((dot, i) => {
-      dot.classList.toggle("active", i === index);
+    navElement.querySelectorAll('button').forEach((dot, i) => {
+      dot.classList.toggle('active', i === index);
     });
   }
 
-  navElement.innerHTML = "";
+  navElement.innerHTML = '';
   imagesArray.forEach((_, i) => {
-    const dot = document.createElement("button");
-    dot.addEventListener("click", () => showImage(i));
+    const dot = document.createElement('button');
+    dot.setAttribute('aria-label', `Go to image ${i + 1}`);
+    dot.addEventListener('click', () => showImage(i));
     navElement.appendChild(dot);
   });
 
   showImage(0);
 }
 
-
 // ========= MAIN DOCUMENT LOGIC =========
 
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener('DOMContentLoaded', () => {
   const body = document.body;
 
+  // ===== SCROLL HINT =====
+  window.addEventListener('scroll', () => {
+    if (window.scrollY > 10) {
+      body.classList.add('scrolled');
+    } else {
+      body.classList.remove('scrolled');
+    }
+  });
+
   // ===== LANDING =====
-  const LANDING_KEY = "portfolio-landing-shown";
-  const landing = document.getElementById("landing");
-  const enterBtn = document.getElementById("enter-btn");
+  const LANDING_KEY = 'portfolio-landing-shown';
+  const landing = document.getElementById('landing');
+  const enterBtn = document.getElementById('enter-btn');
 
   let landingSeen = false;
   try {
-    landingSeen = sessionStorage.getItem(LANDING_KEY) === "1";
+    landingSeen = sessionStorage.getItem(LANDING_KEY) === '1';
   } catch {}
 
   if (landingSeen) {
-    body.classList.remove("landing-active");
-    if (landing) landing.style.display = "none";
+    body.classList.remove('landing-active');
+    if (landing) landing.style.display = 'none';
   }
 
   if (enterBtn) {
-    enterBtn.addEventListener("click", () => {
-      body.classList.remove("landing-active");
+    enterBtn.addEventListener('click', () => {
+      body.classList.remove('landing-active');
       setTimeout(() => {
-        if (landing) landing.style.display = "none";
+        if (landing) landing.style.display = 'none';
       }, 550);
 
       try {
-        sessionStorage.setItem(LANDING_KEY, "1");
+        sessionStorage.setItem(LANDING_KEY, '1');
       } catch {}
     });
   }
 
   // ===== RETURN BUTTON =====
-  const returnBtn = document.getElementById("return-btn");
+  const returnBtn = document.getElementById('return-btn');
 
   if (returnBtn) {
-    if (!body.classList.contains("landing-active"))
-      returnBtn.classList.add("visible");
+    if (!body.classList.contains('landing-active')) {
+      returnBtn.classList.add('visible');
+    }
 
-    returnBtn.addEventListener("click", () => {
-      sessionStorage.removeItem(LANDING_KEY);
-      body.classList.add("landing-active");
+    returnBtn.addEventListener('click', () => {
+      try {
+        sessionStorage.removeItem(LANDING_KEY);
+      } catch {}
+      body.classList.add('landing-active');
 
-      landing.style.display = "flex";
-      landing.style.opacity = "0";
-      setTimeout(() => (landing.style.opacity = "1"), 20);
+      if (landing) {
+        landing.style.display = 'flex';
+        landing.style.opacity = '0';
+        setTimeout(() => {
+          landing.style.opacity = '1';
+        }, 20);
+      }
 
-      returnBtn.classList.remove("visible");
+      returnBtn.classList.remove('visible');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     });
 
     if (enterBtn) {
-      enterBtn.addEventListener("click", () =>
-        setTimeout(() => returnBtn.classList.add("visible"), 600)
-      );
+      enterBtn.addEventListener('click', () => {
+        setTimeout(() => {
+          returnBtn.classList.add('visible');
+        }, 600);
+      });
     }
   }
 
   // ===== 3D SPINNER CAROUSEL =====
-  const spinner = document.getElementById("spinner-slider");
+  const spinner = document.getElementById('spinner-slider');
+  if (spinner && SPINNER_IMAGES && SPINNER_IMAGES.length) {
+    const imgs = SPINNER_IMAGES.filter(Boolean);
+    if (imgs.length) {
+      spinner.style.setProperty('--quantity', imgs.length.toString());
 
-  if (spinner) {
-    const imgs = SPINNER_IMAGES;
-    spinner.style.setProperty("--quantity", imgs.length.toString());
+      imgs.forEach((src, index) => {
+        const item = document.createElement('div');
+        item.className = 'item';
+        item.style.setProperty('--position', (index + 1).toString());
 
-    imgs.forEach((src, index) => {
-      const div = document.createElement("div");
-      div.className = "item";
-      div.style.setProperty("--position", index + 1);
+        const img = document.createElement('img');
+        img.src = src;
+        img.alt = `Spinner image ${index + 1}`;
 
-      const img = document.createElement("img");
-      img.src = src;
-      img.alt = "spinner image";
-
-      div.appendChild(img);
-      spinner.appendChild(div);
-    });
+        item.appendChild(img);
+        spinner.appendChild(item);
+      });
+    }
   }
 
   // ===== INTRO CAROUSEL =====
+  const fallbackIntro =
+    'https://placehold.co/300x400/ff9a9e/white?text=Bryan';
+
   initCarousel(
-    document.getElementById("hero-img"),
-    document.getElementById("carousel-nav"),
+    document.getElementById('hero-img'),
+    document.getElementById('carousel-nav'),
     INTRO_IMAGES,
-    "https://placehold.co/300x400/ff9a9e/white?text=Bryan"
+    fallbackIntro
   );
 
   // ===== OTHER CAROUSELS =====
+  const fallbackAchievements =
+    'https://placehold.co/300x400/f3f4f6/999?text=Achievements';
+  const fallbackHobby =
+    'https://placehold.co/300x400/e0f2fe/555?text=Hobbies';
+
   initCarousel(
-    document.getElementById("achievements-img"),
-    document.getElementById("achievements-nav"),
+    document.getElementById('achievements-img'),
+    document.getElementById('achievements-nav'),
     ACHIEVEMENTS_IMAGES,
-    "https://placehold.co/300x400/f3f4f6/999?text=Achievements"
+    fallbackAchievements
   );
 
   initCarousel(
-    document.getElementById("hobby-img"),
-    document.getElementById("hobby-nav"),
+    document.getElementById('hobby-img'),
+    document.getElementById('hobby-nav'),
     HOBBY_IMAGES,
-    "https://placehold.co/300x400/e0f2fe/555?text=Hobbies"
+    fallbackHobby
   );
 
   // ===== CONTACT MODAL =====
-  const modal = document.getElementById("contact-modal");
-  const contactBtn = document.getElementById("contact-btn");
-  const closeModal = document.getElementById("close-modal");
+  const modal = document.getElementById('contact-modal');
+  const contactBtn = document.getElementById('contact-btn');
+  const closeModal = document.getElementById('close-modal');
 
   if (modal && contactBtn && closeModal) {
-    contactBtn.addEventListener("click", () => {
-      modal.style.display = "flex";
+    contactBtn.addEventListener('click', () => {
+      modal.style.display = 'flex';
     });
 
-    closeModal.addEventListener("click", () => {
-      modal.style.display = "none";
+    closeModal.addEventListener('click', () => {
+      modal.style.display = 'none';
     });
 
-    window.addEventListener("click", (e) => {
-      if (e.target === modal) modal.style.display = "none";
+    window.addEventListener('click', (e) => {
+      if (e.target === modal) modal.style.display = 'none';
     });
   }
 
-  // ===== SECTION SWITCHER =====
-  const links = document.querySelectorAll(".footer-link");
-  const sections = document.querySelectorAll(".section");
+  // ===== SECTION SWITCHER WITH RANDOM ANIMATIONS =====
+  const footerLinks = document.querySelectorAll('.footer-link');
+  const sections = document.querySelectorAll('.section');
 
-  links.forEach((link) => {
-    link.addEventListener("click", () => {
-      const id = link.dataset.section;
+  if (footerLinks.length && sections.length) {
+    const ANIM_CLASSES = ['anim-fade', 'anim-slide', 'anim-zoom'];
 
-      sections.forEach((s) => s.classList.toggle("active", s.id === id));
-      links.forEach((l) => l.classList.toggle("active", l === link));
+    function clearAnimClasses(el) {
+      el.classList.remove('anim-fade', 'anim-slide', 'anim-zoom', 'showing');
+    }
+
+    footerLinks.forEach((link) => {
+      link.addEventListener('click', () => {
+        const targetId = link.dataset.section;
+
+        sections.forEach((sec) => {
+          clearAnimClasses(sec);
+          sec.classList.remove('active');
+        });
+
+        const target = document.getElementById(targetId);
+        if (target) {
+          target.classList.add('active');
+
+          const anim =
+            ANIM_CLASSES[Math.floor(Math.random() * ANIM_CLASSES.length)];
+          target.classList.add(anim);
+
+          requestAnimationFrame(() => {
+            target.classList.add('showing');
+          });
+
+          // just scroll to top of page when switching sections
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+        footerLinks.forEach((btn) =>
+          btn.classList.toggle('active', btn === link)
+        );
+      });
     });
-  });
+
+    const initialActive = document.querySelector('.section.active');
+    if (initialActive) {
+      initialActive.classList.add('showing');
+    }
+  } else {
+    console.warn('Footer links or sections not found for section switcher.');
+  }
 
   // ===== THEME SWITCHER =====
-  const THEME_KEY = "portfolio-theme";
-  const themeToggle = document.getElementById("theme-toggle");
-  const panel = document.getElementById("theme-panel");
-  const options = document.querySelectorAll(".theme-option");
+  const THEME_KEY = 'portfolio-theme';
+  const themeToggle = document.getElementById('theme-toggle');
+  const themePanel = document.getElementById('theme-panel');
+  const themeOptions = document.querySelectorAll('.theme-option');
+  const themeClassNames = ['theme-ocean', 'theme-forest', 'theme-midnight'];
 
-  function applyTheme(theme) {
-    body.classList.remove("theme-ocean", "theme-forest", "theme-midnight");
+  function applyTheme(themeName) {
+    themeClassNames.forEach((cls) => document.body.classList.remove(cls));
 
-    if (theme === "ocean") body.classList.add("theme-ocean");
-    if (theme === "forest") body.classList.add("theme-forest");
-    if (theme === "midnight") body.classList.add("theme-midnight");
+    if (themeName === 'ocean') {
+      document.body.classList.add('theme-ocean');
+    } else if (themeName === 'forest') {
+      document.body.classList.add('theme-forest');
+    } else if (themeName === 'midnight') {
+      document.body.classList.add('theme-midnight');
+    }
 
-    options.forEach((o) => o.classList.toggle("active", o.dataset.theme === theme));
-
-    localStorage.setItem(THEME_KEY, theme);
-  }
-
-  if (themeToggle && panel) {
-    themeToggle.addEventListener("click", (e) => {
-      e.stopPropagation();
-      panel.classList.toggle("open");
+    themeOptions.forEach((opt) => {
+      opt.classList.toggle('active', opt.dataset.theme === themeName);
     });
 
-    window.addEventListener("click", (e) => {
-      if (!panel.contains(e.target) && e.target !== themeToggle) {
-        panel.classList.remove("open");
+    try {
+      localStorage.setItem(THEME_KEY, themeName);
+    } catch {}
+    console.log('Applied theme:', themeName);
+  }
+
+  if (themeToggle && themePanel) {
+    themeToggle.addEventListener('click', (e) => {
+      e.stopPropagation();
+      themePanel.classList.toggle('open');
+    });
+
+    window.addEventListener('click', (e) => {
+      if (!themePanel.contains(e.target) && e.target !== themeToggle) {
+        themePanel.classList.remove('open');
       }
     });
+  } else {
+    console.warn('Theme toggle or panel not found.');
   }
 
-  options.forEach((o) =>
-    o.addEventListener("click", () => {
-      applyTheme(o.dataset.theme);
-      panel.classList.remove("open");
-    })
-  );
+  if (themeOptions.length) {
+    themeOptions.forEach((opt) => {
+      opt.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const theme = opt.dataset.theme || 'sunset';
+        applyTheme(theme);
+        themePanel.classList.remove('open');
+      });
+    });
+  } else {
+    console.warn('No .theme-option elements found.');
+  }
 
-  applyTheme(localStorage.getItem(THEME_KEY) || "sunset");
+  let initialTheme = 'sunset';
+  try {
+    const savedTheme = localStorage.getItem(THEME_KEY);
+    if (savedTheme) {
+      initialTheme = savedTheme;
+    }
+  } catch {}
+  applyTheme(initialTheme);
 });
